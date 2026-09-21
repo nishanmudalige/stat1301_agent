@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: stat1301-notes-assistant
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ANTHROPIC_API_KEY
+        sync: false        # Render will ask you to paste this in the dashboard
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+      - key: APP_PASSWORD
+        sync: false        # optional: an access code so strangers can't use your API credit
