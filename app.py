@@ -26,7 +26,7 @@ MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 TOP_K = int(os.environ.get("TOP_K", "8"))              # chunks sent to Claude
 CHUNK_CHARS = int(os.environ.get("CHUNK_CHARS", "1800"))
 OVERLAP_CHARS = int(os.environ.get("OVERLAP_CHARS", "300"))
-MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "1500"))
+MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "2500"))
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "")      # optional access code
 MAX_QUESTION_CHARS = 2000
 MAX_HISTORY_TURNS = 6
@@ -43,7 +43,46 @@ using the notation and terminology of the notes.
 ("The notes don't cover this in the sections I found") rather than guessing. \
 You may then suggest which topic to look up.
 - Write maths in plain text or simple LaTeX between $...$ signs.
-- Keep answers focused; use short paragraphs or lists."""
+- Keep answers focused; use short paragraphs or lists.
+
+FIGURES
+The chat page can draw real figures. NEVER draw ASCII-art graphs. When the student \
+asks for a graph, plot, picture, sketch or diagram, or when a figure would clearly help \
+(a distribution's shape, a p-value area, a histogram, a scatter plot), include ONE of:
+
+1) A plot, as a fenced code block with the language `plot` containing JSON:
+```plot
+{"title": "Standard normal density", "xlabel": "x", "ylabel": "f(x)",
+ "layers": [
+  {"type": "function", "expr": "dnorm(x, 0, 1)", "from": -4, "to": 4, "label": "N(0, 1)"},
+  {"type": "shade", "expr": "dnorm(x, 0, 1)", "from": 1.96, "to": 4, "label": "P(Z > 1.96)"},
+  {"type": "vline", "x": 0, "label": "μ"}
+ ]}
+```
+Layer types:
+- "function": curve of expr in x over [from, to]. "shade": same, filled down to 0.
+- "bars": {"expr": "dbinom(x, 10, 0.3)", "from": 0, "to": 10} for integer x, \
+or {"x": [...], "y": [...]} (x may be category names).
+- "line" / "points": {"x": [...], "y": [...]}.
+- "histogram": {"data": [...]} or {"sample": "rnorm(500, 170, 10)"}; optional "bins", \
+"density": true (scales bars to a density so a "function" layer can be overlaid).
+- "boxplot": {"data": [...]} or {"sample": "..."}, optional "label" (several allowed).
+- "vline" / "hline": {"x": 1.96} / {"y": 0.05}, optional "label".
+- "text": {"x": 1, "y": 0.2, "text": "note"}.
+Every layer may have "label" (legend name). Expressions use math.js syntax \
+(^ for powers, sqrt, exp, log, pi, abs) plus these R-style functions: \
+dnorm(x,mu,sd), pnorm(x,mu,sd), qnorm(p,mu,sd), dt(x,df), pt(x,df), dchisq(x,df), \
+df(x,d1,d2), dbinom(k,n,p), pbinom(k,n,p), dpois(k,lambda), dunif(x,a,b), dexp(x,rate), \
+choose(n,k); samples: rnorm(n,mu,sd), runif(n,a,b), rexp(n,rate), rbinom(n,size,p), \
+rpois(n,lambda). Use Unicode (μ, σ, α, χ²) in titles/labels, not LaTeX. \
+Output must be strict JSON (double quotes, no comments).
+
+2) A diagram that is not a plot (Venn diagram, probability tree, flow of a test): \
+a fenced code block with the language `svg` containing one <svg> element with a viewBox, \
+using stroke="currentColor"/fill="currentColor" for lines and text so it works in dark mode.
+
+After the figure, explain in a sentence or two what it shows. \
+You may also give R code (as in the notes) so the student can reproduce it."""
 
 # ------------------------------------------------------- load & chunk notes ---
 # Section headings look like "7.2 One-sample t-test" or "5 Descriptive Statistics"

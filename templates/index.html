@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STAT1301 Notes Assistant</title>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.15/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjs@13.2.3/lib/browser/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+<script src="{{ url_for('static', filename='figures.js') }}"></script>
 <script>
   window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']] } };
 </script>
@@ -26,6 +30,10 @@
   .bot p:first-child { margin-top: 0; } .bot p:last-child { margin-bottom: 0; }
   .sources { margin-top: 8px; font-size: .8rem; color: var(--muted); }
   .error { color: #d92d20; }
+  .figure { margin: 10px 0; width: 100%; }
+  .figure svg { display: block; margin: 0 auto; width: 100%; max-width: 520px; height: auto; max-height: 420px; color: var(--text); }
+  .bot pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+  .fig-error { margin: 8px 0; font-size: .85rem; color: #d92d20; }
   form { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 16px; display:flex; gap:8px; flex-wrap: wrap; }
   textarea, input { flex:1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 10px; border:1px solid var(--border); background: var(--card); color: var(--text); }
   textarea { resize: vertical; min-height: 46px; }
@@ -54,7 +62,21 @@
 const chat = document.getElementById('chat'), form = document.getElementById('f');
 const q = document.getElementById('q'), send = document.getElementById('send');
 const pw = document.getElementById('pw');
-const history = [];
+const chatHistory = [];
+
+// Remember the access code: take it from the link (?code=...) or from this
+// browser's storage, so it only has to be entered once per device.
+const KEY = 'stat1301_access_code';
+function store(fn) { try { return fn(); } catch (e) { return null; } }
+if (pw) {
+  const fromUrl = new URLSearchParams(location.search).get('code');
+  const saved = fromUrl || store(() => localStorage.getItem(KEY));
+  if (fromUrl) {
+    store(() => localStorage.setItem(KEY, fromUrl));
+    window.history.replaceState(null, '', location.pathname);  // hide code from the address bar
+  }
+  if (saved) { pw.value = saved; pw.style.display = 'none'; }
+}
 
 function add(cls, html) {
   const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = html;
@@ -71,14 +93,20 @@ form.addEventListener('submit', async e => {
   const pending = add('bot hint', 'Thinking…');
   try {
     const r = await fetch('/api/ask', { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ question, history, password: pw ? pw.value : '' }) });
+      body: JSON.stringify({ question, history: chatHistory, password: pw ? pw.value : '' }) });
     const data = await r.json();
+    if (r.status === 401 && pw) {            // wrong/old code: forget it and show the box again
+      store(() => localStorage.removeItem(KEY));
+      pw.style.display = ''; pw.value = ''; pw.focus();
+    }
     if (!r.ok) throw new Error(data.error || 'Request failed');
+    if (pw) { store(() => localStorage.setItem(KEY, pw.value)); pw.style.display = 'none'; }
     pending.className = 'msg bot';
-    pending.innerHTML = marked.parse(data.answer) +
+    pending.innerHTML = DOMPurify.sanitize(marked.parse(data.answer)) +
       (data.sources.length ? '<div class="sources">Sections searched: ' + data.sources.map(esc).join(' · ') + '</div>' : '');
+    if (window.renderFigures) renderFigures(pending);     // ```plot / ```svg -> real figures
     if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([pending]);
-    history.push({role:'user', content:question}, {role:'assistant', content:data.answer});
+    chatHistory.push({role:'user', content:question}, {role:'assistant', content:data.answer});
   } catch (err) {
     pending.className = 'msg bot error'; pending.textContent = err.message;
   } finally { send.disabled = false; q.focus(); }

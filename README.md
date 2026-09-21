@@ -9,6 +9,7 @@ them to Claude, which answers and cites the sections it used.
 |---|---|
 | `app.py` | The agent: loads/chunks notes, searches them, calls Claude, serves the web page |
 | `templates/index.html` | Chat interface (renders Markdown and maths) |
+| `static/figures.js` | Draws the graphs and diagrams Claude describes (```plot / ```svg blocks) |
 | `data/notes.txt` | The course notes (swap in another text file to reuse for another course) |
 | `requirements.txt` | Python packages |
 | `render.yaml` | Render deployment settings |
@@ -19,7 +20,7 @@ them to Claude, which answers and cites the sections it used.
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | yes | – | Your key from console.anthropic.com |
 | `ANTHROPIC_MODEL` | no | `claude-sonnet-5` | Use `claude-haiku-4-5-20251001` for cheaper answers |
-| `APP_PASSWORD` | no | empty | If set, users must enter this access code |
+| `APP_PASSWORD` | no | empty | If set, users enter this code once per browser (it is remembered), or open `https://<your-url>/?code=<code>`. Leave empty for no code at all. |
 | `TOP_K` | no | 8 | Number of note excerpts sent per question |
 
 ## Run locally
