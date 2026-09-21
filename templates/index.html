@@ -31,7 +31,8 @@
   .sources { margin-top: 8px; font-size: .8rem; color: var(--muted); }
   .error { color: #d92d20; }
   .figure { margin: 10px 0; width: 100%; }
-  .figure svg { display: block; margin: 0 auto; width: 100%; max-width: 520px; height: auto; max-height: 420px; color: var(--text); }
+  /* diagrams only; Plotly charts are SVG too and must keep their own size */
+  .figure.diagram svg { display: block; margin: 0 auto; width: 100%; max-width: 520px; height: auto; max-height: 420px; color: var(--text); }
   .bot pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
   .fig-error { margin: 8px 0; font-size: .85rem; color: #d92d20; }
   form { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 16px; display:flex; gap:8px; flex-wrap: wrap; }

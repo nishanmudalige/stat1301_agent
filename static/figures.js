@@ -149,6 +149,7 @@
         } else {
           const clean = DOMPurify.sanitize(src, { USE_PROFILES: { svg: true, svgFilters: true } });
           if (!/<svg/i.test(clean)) throw new Error('empty SVG');
+          fig.classList.add('diagram');
           fig.innerHTML = clean;
         }
         pre.remove();
